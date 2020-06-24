@@ -1,0 +1,140 @@
+service: GSD
+
+package:
+  individually: true
+
+plugins:
+  - serverless-dotenv-plugin # Load .env as environment variables
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-west-1
+
+  # These environment variables are made available to our functions
+  # under process.env.
+  # environment:
+
+  httpApi:
+    authorizers:
+      customCognitoAuthorizer:
+        identitySource: $request.header.Authorization
+        issuerUrl: ${env:COGNITO_ISSUER_URL}
+        audience:
+          - ${env:COGNITO_CLIENT_ID}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:eu-west-1:173023262662:table/Cards*"
+
+  logs:
+    httpApi: true
+
+functions:
+  postCard:
+    handler: lambda/postCard/postCard-handler.postCard
+    events:
+      - httpApi:
+          method: POST
+          path: /cards
+          authorizer: customCognitoAuthorizer
+      - httpApi:
+          method: PUT
+          path: /cards
+          authorizer: customCognitoAuthorizer
+    package:
+      exclude:
+        - ./**
+        - '!./lambda/postCard/**'  
+    memorySize: 128
+
+  getCards:
+    handler: lambda/getCards-handler.getCards
+    events:
+      - httpApi:
+          method: GET
+          path: /cards
+          authorizer: customCognitoAuthorizer
+    package:
+      exclude:
+        - ./**
+      include:
+        - ./lambda/getCards-handler.js
+    memorySize: 128
+
+  getCard:
+    handler: lambda/getCard-handler.getCard
+    events:
+      - httpApi:
+          method: GET
+          path: /cards/{cardId}
+          authorizer: customCognitoAuthorizer
+    package:
+      exclude:
+        - ./**
+      include:
+        - ./lambda/getCard-handler.js
+    memorySize: 128
+
+  deleteCard:
+    handler: lambda/deleteCard-handler.deleteCard
+    events:
+      - httpApi: 
+          method: DELETE
+          path: /cards/{cardId}
+          authorizer: customCognitoAuthorizer
+    package:
+      exclude:
+        - ./**
+      include:
+        - ./lambda/deleteCard-handler.js
+    memorySize: 128
+
+resources:
+  Resources:
+    CardsDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        TableName: Cards
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+          -  
+            AttributeName: cardId
+            AttributeType: S
+          -  
+            AttributeName: fixed_creationTimestamp_tag
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+          -
+            AttributeName: cardId
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        LocalSecondaryIndexes:
+          -
+            IndexName : tagIndex
+            KeySchema :
+              -
+                AttributeName : userId
+                KeyType : HASH
+              -
+                AttributeName : fixed_creationTimestamp_tag
+                KeyType : RANGE                         
+            Projection :
+              ProjectionType : ALL
