@@ -1,20 +1,20 @@
+org: kevinlemamartinez
+app: gsd-api
 service: GSD
+configValidationMode: error
 
 package:
   individually: true
 
-plugins:
-  - serverless-dotenv-plugin # Load .env as environment variables
+# Load .env as environment variables
+useDotenv: true
 
 provider:
   name: aws
   runtime: nodejs12.x
   stage: dev
   region: eu-west-1
-
-  # These environment variables are made available to our functions
-  # under process.env.
-  # environment:
+  lambdaHashingVersion: 20201221
 
   httpApi:
     authorizers:
@@ -24,17 +24,19 @@ provider:
         audience:
           - ${env:COGNITO_CLIENT_ID}
 
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:eu-west-1:173023262662:table/Cards*"
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: "arn:aws:dynamodb:eu-west-1:173023262662:table/Cards*"
 
   logs:
     httpApi: true
@@ -52,9 +54,9 @@ functions:
           path: /cards
           authorizer: customCognitoAuthorizer
     package:
-      exclude:
-        - ./**
-        - '!./lambda/postCard/**'  
+      patterns:
+        - '!./**'
+        - ./lambda/postCard/** 
     memorySize: 128
 
   getCards:
@@ -65,10 +67,9 @@ functions:
           path: /cards
           authorizer: customCognitoAuthorizer
     package:
-      exclude:
-        - ./**
-      include:
-        - ./lambda/getCards-handler.js
+      patterns:
+        - '!./**'
+        - ./lambda/getCards-handler.js 
     memorySize: 128
 
   getCard:
@@ -79,10 +80,9 @@ functions:
           path: /cards/{cardId}
           authorizer: customCognitoAuthorizer
     package:
-      exclude:
-        - ./**
-      include:
-        - ./lambda/getCard-handler.js
+      patterns:
+        - '!./**'
+        - ./lambda/getCard-handler.js  
     memorySize: 128
 
   deleteCard:
@@ -93,14 +93,43 @@ functions:
           path: /cards/{cardId}
           authorizer: customCognitoAuthorizer
     package:
-      exclude:
-        - ./**
-      include:
-        - ./lambda/deleteCard-handler.js
+      patterns:
+        - '!./**'
+        - ./lambda/deleteCard-handler.js       
     memorySize: 128
 
 resources:
   Resources:
+
+    # Bucket to host the static website
+    GSDWebBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: gsd-web
+        WebsiteConfiguration:
+            IndexDocument: index.html
+    GSDWebBucketPolicy: 
+      Type: AWS::S3::BucketPolicy
+      Properties: 
+        Bucket:
+          Ref: "GSDWebBucket"
+        PolicyDocument:
+          Statement:
+            -
+              Effect: "Allow"
+              Principal: "*"
+              Action:
+                - "s3:GetObject"
+              Resource:
+                Fn::Join:
+                  - ""
+                  - 
+                    - "arn:aws:s3:::"
+                    - 
+                      Ref: "GSDWebBucket"
+                    - "/*"
+
+    # Database
     CardsDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
