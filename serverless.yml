@@ -13,7 +13,7 @@ provider:
   name: aws
   runtime: nodejs12.x
   stage: dev
-  region: eu-west-1
+  region: ${env:AWS_REGION}
   lambdaHashingVersion: 20201221
 
   httpApi:
@@ -36,7 +36,7 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
-          Resource: "arn:aws:dynamodb:eu-west-1:173023262662:table/Cards*"
+          Resource: "arn:aws:dynamodb:${env:AWS_REGION}:${env:AWS_ACCOUNT_NUMBER}:table/Cards*"
 
   logs:
     httpApi: true
