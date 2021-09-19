@@ -9,7 +9,7 @@ const responseHeaders = {
   'Access-Control-Allow-Credentials': true
 };
 
-module.exports.postCard = (event, context, callback) => {
+exports.postCard = (event, context, callback) => {
   postCard(event, (error, result) => {
     var response;
     if (!error) {
@@ -32,7 +32,7 @@ module.exports.postCard = (event, context, callback) => {
 function postCard(event, callback) {
 
   var data = JSON.parse(event.body);
-  data.userId = event.requestContext.authorizer.claims.client_id;
+  data.userId = event.requestContext.authorizer.jwt.claims.sub;
 
   if (data.cardId == null) {
     var cardOrder = getLastCardOrder(data.userId);

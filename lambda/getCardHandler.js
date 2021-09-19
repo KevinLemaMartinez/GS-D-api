@@ -8,7 +8,7 @@ const responseHeaders = {
   'Access-Control-Allow-Credentials': true
 };
 
-module.exports.getCard = (event, context, callback) => {
+exports.getCard = (event, context, callback) => {
   getCard(event, (error, result) => {
     var response;
     if (!error) {
@@ -30,7 +30,7 @@ module.exports.getCard = (event, context, callback) => {
 
 function getCard(event, callback) {
 
-  var userId = event.requestContext.authorizer.claims.client_id;
+  var userId = event.requestContext.authorizer.jwt.claims.sub;
   var cardId = event.pathParameters.cardId;
 
   const params = {

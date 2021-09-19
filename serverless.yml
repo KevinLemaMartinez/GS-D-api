@@ -23,7 +23,7 @@ provider:
         issuerUrl: ${env:COGNITO_ISSUER_URL}
         audience:
           - ${env:COGNITO_CLIENT_ID}
-
+    cors: true
   iam:
     role:
       statements:
@@ -43,7 +43,7 @@ provider:
 
 functions:
   postCard:
-    handler: lambda/postCard/postCard-handler.postCard
+    handler: 'lambda/postCard/postCardHandler.postCard'
     events:
       - httpApi:
           method: POST
@@ -60,7 +60,7 @@ functions:
     memorySize: 128
 
   getCards:
-    handler: lambda/getCards-handler.getCards
+    handler: 'lambda/getCardsHandler.getCards'
     events:
       - httpApi:
           method: GET
@@ -69,11 +69,11 @@ functions:
     package:
       patterns:
         - '!./**'
-        - ./lambda/getCards-handler.js 
+        - ./lambda/getCardsHandler.js 
     memorySize: 128
 
   getCard:
-    handler: lambda/getCard-handler.getCard
+    handler: 'lambda/getCardHandler.getCard'
     events:
       - httpApi:
           method: GET
@@ -82,11 +82,11 @@ functions:
     package:
       patterns:
         - '!./**'
-        - ./lambda/getCard-handler.js  
+        - ./lambda/getCardHandler.js  
     memorySize: 128
 
   deleteCard:
-    handler: lambda/deleteCard-handler.deleteCard
+    handler: 'lambda/deleteCardHandler.deleteCard'
     events:
       - httpApi: 
           method: DELETE
@@ -95,7 +95,7 @@ functions:
     package:
       patterns:
         - '!./**'
-        - ./lambda/deleteCard-handler.js       
+        - ./lambda/deleteCardHandler.js       
     memorySize: 128
 
 resources:
